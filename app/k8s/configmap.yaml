@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: product-service-config
+data:
+  NODE_ENV: "production"
+  PORT: "3000"
+  LOG_LEVEL: "info"
+  DB_PORT: "5432"
+  DB_NAME: "product_db"
+  PGBOUNCER_PORT: "6432"
+  ELASTICSEARCH_INDEX_PRODUCTS: "products"
+  REDIS_PORT: "6379"
+  REDIS_TTL_SECONDS: "300"
+  REDIS_DB: "0"
+  KAFKA_CLIENT_ID: "product-service"
+  KAFKA_GROUP_ID: "product-service-group"
+  KAFKA_TOPIC_CATALOG_UPDATED: "catalog.updated"
+  CB_TIMEOUT_MS: "3000"
+  CB_ERROR_THRESHOLD_PERCENTAGE: "50"
+  CB_RESET_TIMEOUT_MS: "30000"
+  OTEL_SERVICE_NAME: "product-service"
+  METRICS_PORT: "9090"
