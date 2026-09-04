@@ -8,6 +8,9 @@ ACE scaffold: Test_1. Node.js/TypeScript Auth Service (hexagonal architecture).
   - `GET /auth/registration-meta` — active ToS / Privacy Policy versions and document URLs
   - `POST /auth/register` — requires `consent_accepted: true`; returns `422 CONSENT_REQUIRED` otherwise; persists a `ConsentRecord` atomically with the `UserAccount`
   - `/register.html` — reference registration screen (checkbox, document links, inline error, ARIA)
+- **US-011** — Email address inline validation on the registration form
+  - `/email-validation.js` — client-side `EmailFormatValidator` (RFC 5322 practical subset), `EmailErrorCopyRegistry` (UX-approved copy) and `RegistrationFormState` helpers; validated on blur, re-validated on each keystroke once touched, and enforced on submit
+  - Empty on submit → "Please enter your email address."; invalid format → "Please enter a valid email address (e.g. name@example.com)."; errors are announced via `role="alert"` and reflected with `aria-invalid`
 
 ## Layout
 

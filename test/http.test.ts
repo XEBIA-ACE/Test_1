@@ -89,6 +89,22 @@ describe('HTTP adapter', () => {
     expect(res.text).toContain('id="privacy-link"');
     expect(res.text).toContain('role="alert"');
   });
+
+  it('serves the registration screen with an accessible, inline-validated email field', async () => {
+    const { service } = buildService();
+    const app = createApp(service);
+    const page = await request(app).get('/register.html');
+    expect(page.status).toBe(200);
+    expect(page.text).toContain('<script src="/email-validation.js"></script>');
+    expect(page.text).toMatch(/<input id="email"[^>]*aria-describedby="email-hint email-error"/s);
+    expect(page.text).toMatch(/<input id="email"[^>]*aria-required="true"/s);
+    expect(page.text).toContain('<p id="email-error" class="error" role="alert" aria-live="assertive">');
+
+    const script = await request(app).get('/email-validation.js');
+    expect(script.status).toBe(200);
+    expect(script.type).toBe('application/javascript');
+    expect(script.text).toContain('root.EmailValidation = factory()');
+  });
 });
 
 describe('bootstrap', () => {
