@@ -13,7 +13,10 @@
     .consent label { margin: 0; font-weight: 400; line-height: 1.5rem; }
     a { color: #0b5cad; text-decoration: underline; }
     a:focus-visible, input:focus-visible, button:focus-visible { outline: 3px solid #0b5cad; outline-offset: 2px; }
+    input[aria-invalid="true"] { border: 2px solid #a4161a; }
     .error { color: #a4161a; margin-top: 0.4rem; font-size: 0.95rem; }
+    .error:empty { display: none; }
+    .hint { color: #555; font-size: 0.85rem; margin-top: 0.25rem; }
     .success { color: #1b6e3a; margin-top: 1rem; }
     .version { color: #555; font-size: 0.85rem; }
     button { margin-top: 1.5rem; padding: 0.75rem 1.25rem; font-size: 1rem; min-height: 44px; cursor: pointer; }
@@ -23,8 +26,11 @@
   <h1>Create your account</h1>
   <form id="register-form" novalidate>
     <label for="email">Email</label>
-    <input id="email" name="email" type="email" autocomplete="email" required aria-describedby="email-error">
-    <p id="email-error" class="error" role="alert"></p>
+    <input id="email" name="email" type="email" autocomplete="email" inputmode="email"
+           autocapitalize="none" spellcheck="false" required aria-required="true"
+           aria-invalid="false" aria-describedby="email-hint email-error">
+    <p id="email-hint" class="hint">We'll use this to sign you in, e.g. name@example.com</p>
+    <p id="email-error" class="error" role="alert" aria-live="assertive"></p>
 
     <label for="password">Password</label>
     <input id="password" name="password" type="password" autocomplete="new-password" required aria-describedby="password-error">
@@ -47,8 +53,10 @@
     <p id="success" class="success" role="status"></p>
   </form>
 
+  <script src="/email-validation.js"></script>
   <script>
     const form = document.getElementById('register-form');
+    const emailInput = document.getElementById('email');
     const consent = document.getElementById('consent');
     const errors = {
       email: document.getElementById('email-error'),
@@ -67,6 +75,26 @@
         `Terms of Service version ${meta.tos_version} · Privacy Policy version ${meta.privacy_policy_version}`;
     }
 
+    let emailTouched = false;
+    let submissionAttempted = false;
+
+    function renderEmailField(submitting) {
+      const field = EmailValidation.createEmailFieldInput(emailInput.value, submissionAttempted);
+      const showError = field.errorMessage !== null && (emailTouched || submitting);
+      errors.email.textContent = showError ? field.errorMessage : '';
+      emailInput.setAttribute('aria-invalid', showError ? 'true' : 'false');
+      return field;
+    }
+
+    emailInput.addEventListener('blur', () => {
+      if (emailInput.value !== '' || submissionAttempted) emailTouched = true;
+      renderEmailField(false);
+    });
+
+    emailInput.addEventListener('input', () => {
+      if (emailTouched) renderEmailField(false);
+    });
+
     function clearErrors() {
       Object.values(errors).forEach((el) => { el.textContent = ''; });
       consent.setAttribute('aria-invalid', 'false');
@@ -75,7 +103,15 @@
 
     form.addEventListener('submit', async (event) => {
       event.preventDefault();
+      submissionAttempted = true;
+      emailTouched = true;
       clearErrors();
+
+      const emailField = renderEmailField(true);
+      if (emailField.isSubmissionBlocked) {
+        emailInput.focus();
+        return;
+      }
 
       if (!consent.checked) {
         errors.consent_accepted.textContent =
@@ -107,6 +143,7 @@
       const target = errors[body.field] || errors.consent_accepted;
       target.textContent = body.message;
       if (body.field === 'consent_accepted') consent.setAttribute('aria-invalid', 'true');
+      if (body.field === 'email') emailInput.setAttribute('aria-invalid', 'true');
     });
 
     loadMeta();
