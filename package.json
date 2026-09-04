@@ -1,0 +1,21 @@
+{
+  "name": "auth-service",
+  "version": "1.0.0",
+  "description": "Auth Service — registration screen email input with inline RFC 5322 validation (US-017)",
+  "private": true,
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "serve": "node -e \"require('http').createServer((q,s)=>{const f=require('path').join('public',q.url==='/'?'/register.html':q.url);require('fs').readFile(f,(e,d)=>{if(e){s.statusCode=404;return s.end()}s.setHeader('Content-Type',f.endsWith('.js')?'text/javascript':'text/html');s.end(d)})}).listen(3000,()=>console.log('http://localhost:3000'))\"",
+    "test": "jest --coverage",
+    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.test.json --noEmit"
+  },
+  "license": "ISC",
+  "devDependencies": {
+    "@types/jest": "^30.0.0",
+    "@types/node": "^20.19.43",
+    "jest": "^30.5.1",
+    "jest-environment-jsdom": "^30.5.1",
+    "ts-jest": "^29.4.12",
+    "typescript": "^5.9.3"
+  }
+}
