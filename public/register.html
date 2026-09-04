@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Create your account</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 28rem; margin: 2rem auto; padding: 0 1rem; color: #1a1a1a; }
+    label { display: block; margin-top: 1rem; font-weight: 600; }
+    input[type="email"], input[type="password"] { width: 100%; padding: 0.6rem; margin-top: 0.25rem; font-size: 1rem; }
+    .consent { display: flex; gap: 0.75rem; align-items: flex-start; margin-top: 1.25rem; }
+    .consent input { width: 1.5rem; height: 1.5rem; margin: 0; flex-shrink: 0; }
+    .consent label { margin: 0; font-weight: 400; line-height: 1.5rem; }
+    a { color: #0b5cad; text-decoration: underline; }
+    a:focus-visible, input:focus-visible, button:focus-visible { outline: 3px solid #0b5cad; outline-offset: 2px; }
+    .error { color: #a4161a; margin-top: 0.4rem; font-size: 0.95rem; }
+    .success { color: #1b6e3a; margin-top: 1rem; }
+    .version { color: #555; font-size: 0.85rem; }
+    button { margin-top: 1.5rem; padding: 0.75rem 1.25rem; font-size: 1rem; min-height: 44px; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <h1>Create your account</h1>
+  <form id="register-form" novalidate>
+    <label for="email">Email</label>
+    <input id="email" name="email" type="email" autocomplete="email" required aria-describedby="email-error">
+    <p id="email-error" class="error" role="alert"></p>
+
+    <label for="password">Password</label>
+    <input id="password" name="password" type="password" autocomplete="new-password" required aria-describedby="password-error">
+    <p id="password-error" class="error" role="alert"></p>
+
+    <div class="consent">
+      <input id="consent" name="consent_accepted" type="checkbox" required
+             aria-required="true" aria-describedby="consent-error consent-versions">
+      <label for="consent">
+        I have read and agree to the
+        <a id="tos-link" href="#" target="_blank" rel="noopener">Terms of Service</a>
+        and the
+        <a id="privacy-link" href="#" target="_blank" rel="noopener">Privacy Policy</a>.
+      </label>
+    </div>
+    <p id="consent-versions" class="version"></p>
+    <p id="consent-error" class="error" role="alert"></p>
+
+    <button type="submit">Create account</button>
+    <p id="success" class="success" role="status"></p>
+  </form>
+
+  <script>
+    const form = document.getElementById('register-form');
+    const consent = document.getElementById('consent');
+    const errors = {
+      email: document.getElementById('email-error'),
+      password: document.getElementById('password-error'),
+      consent_accepted: document.getElementById('consent-error'),
+    };
+    const success = document.getElementById('success');
+    let meta = null;
+
+    async function loadMeta() {
+      const res = await fetch('/auth/registration-meta');
+      meta = await res.json();
+      document.getElementById('tos-link').href = meta.tos_url;
+      document.getElementById('privacy-link').href = meta.privacy_policy_url;
+      document.getElementById('consent-versions').textContent =
+        `Terms of Service version ${meta.tos_version} · Privacy Policy version ${meta.privacy_policy_version}`;
+    }
+
+    function clearErrors() {
+      Object.values(errors).forEach((el) => { el.textContent = ''; });
+      consent.setAttribute('aria-invalid', 'false');
+      success.textContent = '';
+    }
+
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      clearErrors();
+
+      if (!consent.checked) {
+        errors.consent_accepted.textContent =
+          'Please accept the Terms of Service and Privacy Policy to create your account.';
+        consent.setAttribute('aria-invalid', 'true');
+        consent.focus();
+        return;
+      }
+
+      const res = await fetch('/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: form.email.value,
+          password: form.password.value,
+          consent_accepted: true,
+          consent_payload: meta && {
+            tos_version: meta.tos_version,
+            privacy_policy_version: meta.privacy_policy_version,
+          },
+        }),
+      });
+      const body = await res.json();
+      if (res.ok) {
+        form.reset();
+        success.textContent = 'Your account has been created and your consent has been recorded.';
+        return;
+      }
+      const target = errors[body.field] || errors.consent_accepted;
+      target.textContent = body.message;
+      if (body.field === 'consent_accepted') consent.setAttribute('aria-invalid', 'true');
+    });
+
+    loadMeta();
+  </script>
+</body>
+</html>
